@@ -1,0 +1,8 @@
+name: BetterDispensers
+version: 1.0.0
+authors: [FEST_Channel, EvilGeniys]
+
+description: Dispensers now can fill cauldrons, feed animals, pump liquids in large areas using pipes.
+main: com.festp.Main
+
+api-version: 1.14
