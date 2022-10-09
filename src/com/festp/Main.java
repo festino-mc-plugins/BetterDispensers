@@ -9,7 +9,7 @@ import com.festp.dispenser.DropActions;
 
 public class Main extends JavaPlugin implements Listener
 {
-	private CraftManager craft_manager;
+	private CraftManager craftManager;
 	
 	public void onEnable() {
 		Logger.setLogger(getLogger());
@@ -17,19 +17,19 @@ public class Main extends JavaPlugin implements Listener
     	
 		getServer().getPluginManager().registerEvents(this, this);
 		
-    	craft_manager = new CraftManager(this, getServer());
+    	craftManager = new CraftManager(this, getServer());
 
-    	DropActions drop_actions = new DropActions(this);
-    	pm.registerEvents(drop_actions, this);
+    	DropActions dropActions = new DropActions(this);
+    	pm.registerEvents(dropActions, this);
     	
-    	craft_manager.addCrafts();
-    	pm.registerEvents(craft_manager, this);
+    	craftManager.addCrafts();
+    	pm.registerEvents(craftManager, this);
     	
 		Bukkit.getScheduler().scheduleSyncRepeatingTask(this,
 			new Runnable() {
 				public void run() {
-					//fill cauldrons, feed animals and pump liquids
-					drop_actions.onTick();
+					// pump liquids
+					dropActions.onTick();
 				}
 			}, 0L, 1L);
 		
@@ -37,6 +37,6 @@ public class Main extends JavaPlugin implements Listener
 	
 	public CraftManager getCraftManager()
 	{
-		return craft_manager;
+		return craftManager;
 	}
 }
