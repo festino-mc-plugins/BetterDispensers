@@ -2,19 +2,13 @@ package com.festp.dispenser;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
-
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
-import org.bukkit.block.BlockState;
 import org.bukkit.block.Dispenser;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.Directional;
 import org.bukkit.block.data.Waterlogged;
-import org.bukkit.entity.Animals;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.EntityType;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockDispenseEvent;
@@ -22,7 +16,6 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 
 import com.festp.Main;
-import com.festp.utils.Utils;
 import com.festp.utils.UtilsType;
 import com.festp.utils.Vector3i;
 import com.festp.dispenser.PumpManager.PumpState;
@@ -33,54 +26,25 @@ public class DropActions implements Listener
 {
 	Main pl;
 
-	int max_dy = 50;
-	int max_dxz = 50; // TODO: configurable pump area
-	int min_dxz = -max_dxz;
-	int pump_area = max_dxz*2 + 1;
+	int maxDy = 50;
+	int maxDxz = 50; // TODO: configurable pump area
+	int minDxz = -maxDxz;
+	int pumpArea = maxDxz * 2 + 1;
 	
-	// cauldrons to fill with dispenser
-	List<ArrayList<Integer>> disps = new ArrayList<ArrayList<Integer>>();
-	List<BlockState> disp_caul = new ArrayList<>();
-	// dispensers to feed animals
-	List<DispenserFeeder> feeders = new ArrayList<>();
 	// dispensers to pump the water
-	List<Dispenser> disps_pump = new ArrayList<>();
-	List<Block> pumping_blocks = new ArrayList<>();
+	List<Dispenser> dispsPump = new ArrayList<>();
+	List<Block> pumpingBlocks = new ArrayList<>();
 	
 	public DropActions(Main plugin) {
 		this.pl = plugin;
 	}
 	
 	public void onTick() {
-		// dispbreed
-		for (DispenserFeeder f : feeders) {
-			f.feed();
+		for (int i = dispsPump.size()-1; i >= 0; i--) {
+			dispenserPump(dispsPump.get(i));
+			dispsPump.remove(i);
 		}
-		feeders.clear();
-		
-		// dispwater
-		for (int i = 0; i < disp_caul.size(); i += 2) {
-			int j = 0;
-            Inventory inv = ((Dispenser)disp_caul.get(i)).getInventory();
-			for (int slot = 0; slot < 9; slot++)
-				if (j < disps.get(i/2).size() && slot != disps.get(i/2).get(j) || j >= disps.get(i/2).size()) {
-					if (inv.getItem(slot) != null && inv.getItem(slot).getType() == Material.WATER_BUCKET) {
-	                	inv.setItem(slot,new ItemStack(Material.BUCKET));
-	                	Block cauldron = disp_caul.get(i+1).getBlock();
-	                	if (cauldron.getType() == Material.CAULDRON || cauldron.getType() == Material.WATER_CAULDRON && Utils.getCauldronWater(cauldron) < 1.0)
-	                		Utils.fullCauldronWater(cauldron);
-		                break;
-					}
-				} else j++;
-		}
-		disp_caul.clear();
-		disps.clear();
-		
-		for(int i = disps_pump.size()-1; i >= 0; i--) {
-			dispenserPump(disps_pump.get(i));
-			disps_pump.remove(i);
-		}
-		pumping_blocks.clear();
+		pumpingBlocks.clear();
 	}
 	
 	@EventHandler
@@ -90,92 +54,13 @@ public class DropActions implements Listener
 			return;
 		
 		Dispenser dispenser = (Dispenser)event.getBlock().getState();
-		final Block block = getActionBlock(dispenser);
-		boolean breed = false;
-		
-		if (event.getItem().getType().equals(Material.WATER_BUCKET))
-		{
-			if (block.getType() == Material.CAULDRON || block.getType() == Material.WATER_CAULDRON && Utils.getCauldronWater(block) < 1.0)
-			{
-                event.setCancelled(true);
-                disp_caul.add(dispenser);
-                disp_caul.add(block.getState());
-                Inventory inv = dispenser.getInventory();
-                ArrayList<Integer> e = new ArrayList<>();
-				for (int slot = 0; slot < 9; slot++)
-					if (inv.getItem(slot) != null && inv.getItem(slot).getType() == Material.WATER_BUCKET)
-						e.add(slot);
-				disps.add(e);
-                return;
-			}
-		}
-		
-		
-		
-		else if (event.getItem().getType().equals(Material.WHEAT))
-		{
-			for (Entity e : event.getBlock().getWorld().getNearbyEntities(block.getLocation(), 1, 1, 1))
-					if (e.getType() == EntityType.COW || e.getType() == EntityType.SHEEP)
-					{
-						Animals animal = (Animals) e;
-						if (!animal.isAdult() || !(animal.isLoveMode() || !animal.canBreed()))
-						{
-							breed = true;
-							break;
-						}
-					}
-		}
-		else if (event.getItem().getType().equals(Material.CARROT) || event.getItem().getType().equals(Material.POTATO) || event.getItem().getType().equals(Material.BEETROOT))
-		{
-			for(Entity e : event.getBlock().getWorld().getNearbyEntities(block.getLocation(), 1, 1, 1))
-				if (e.getType() == EntityType.PIG)
-				{
-					Animals animal = (Animals) e;
-					if (!animal.isAdult() || !(animal.isLoveMode() || !animal.canBreed()))
-					{
-						breed = true;
-						break;
-					}
-				}
-		}
-		else if(event.getItem().getType().equals(Material.WHEAT_SEEDS) || event.getItem().getType().equals(Material.MELON_SEEDS) || event.getItem().getType().equals(Material.PUMPKIN_SEEDS) || event.getItem().getType().equals(Material.BEETROOT_SEEDS))
-		{
-			for(Entity e : event.getBlock().getWorld().getNearbyEntities(block.getLocation(), 1, 1, 1))
-				if (e.getType() == EntityType.CHICKEN)
-				{
-					Animals animal = (Animals) e;
-					if (!animal.isAdult() || !(animal.isLoveMode() || !animal.canBreed()))
-					{
-						breed = true;
-						break;
-					}
-				}
-		}
-		
-		if (breed)
-		{
-			Inventory inv = ((Dispenser)dispenser).getInventory();
-			Integer[] food_slots = new Integer[inv.getSize()];
-			for (int i = 0; i < food_slots.length; i++) {
-				food_slots[i] = inv.getItem(i) == null ? 0 : inv.getItem(i).getAmount();
-			}
-			DispenserFeeder f = new DispenserFeeder((Dispenser)dispenser, block, event.getItem().getType(), food_slots);
-			feeders.add(f);
+		PumpState pr = PumpManager.test(dispenser, event.getItem());
+		if (pr == PumpState.READY) {
+			dispsPump.add(dispenser);
 			event.setCancelled(true);
 		}
-		
-		
-		
-		else {
-			Dispenser d = ((Dispenser)dispenser);
-			PumpState pr = PumpManager.test(d, event.getItem());
-			if(pr == PumpState.READY) {
-				disps_pump.add(d);
-				event.setCancelled(true);
-			}
-			else if(pr == PumpState.MODULE) {
-				event.setCancelled(true);
-			}
+		else if (pr == PumpState.MODULE) {
+			event.setCancelled(true);
 		}
 	}
 	
@@ -188,45 +73,40 @@ public class DropActions implements Listener
 		PumpType pump_type = PumpType.NONE;
 		int bucket_index = -1, module_index = -1;
 		int pipe_index = -1, null_index = -1, multybucket_index = -1;
-		for(int i = 0; i < 9; i++) {
+		for (int i = 0; i < 9; i++) {
 			ItemStack is;
 			is = inv.getItem(i);
-			if(is != null)
+			if (is != null)
 			{
-				if(module_index < 0 && is.getType() == Material.BLAZE_ROD
+				if (module_index < 0 && is.getType() == Material.BLAZE_ROD
 						&& is.hasItemMeta() && is.getItemMeta().hasLore()) {
-					String lore = is.getItemMeta().getLore().get(0).toLowerCase(Locale.ENGLISH); //new Locale("ru")
-					if(lore.contains("pump") || lore.contains("помп") ) {
-						if(lore.contains("regular") || lore.contains("обычн"))
-						{
-							module_index = i;
-							pump_type = PumpType.REGULAR;
-							if(bucket_index >= 0) break;
-						}
-						else if(lore.contains("advanced") || lore.contains("продвинут"))
-						{
-							module_index = i;
-							pump_type = PumpType.ADVANCED;
-							if(bucket_index >= 0) break;
-						}
+					if (PumpManager.isWeakPump(is)) {
+						module_index = i;
+						pump_type = PumpType.REGULAR;
+						if (bucket_index >= 0) break;
+					}
+					else if (PumpManager.isStrongPump(is)) {
+						module_index = i;
+						pump_type = PumpType.ADVANCED;
+						if (bucket_index >= 0) break;
 					}
 				}
-				else if( is.getType() == Material.BUCKET ) {
-					if(is.getEnchantmentLevel(PumpManager.bottomless_bucket_metaench) > 0) // TODO
+				else if ( is.getType() == Material.BUCKET ) {
+					if (is.getEnchantmentLevel(PumpManager.bottomless_bucket_metaench) > 0) // TODO
 						bucket_index = 9;
-					else if(is.getAmount() == 1 && bucket_index < 0)
+					else if (is.getAmount() == 1 && bucket_index < 0)
 						bucket_index = i;
 					else {
-						if( multybucket_index < 0)
+						if (multybucket_index < 0)
 							multybucket_index = i;
-						if(null_index < 0) continue;
+						if (null_index < 0) continue;
 					}
-					if(module_index >= 0) break;
+					if (module_index >= 0) break;
 				}
-				else if(is.getType() == Material.NETHER_BRICK_FENCE)
+				else if (is.getType() == Material.NETHER_BRICK_FENCE)
 					pipe_index = i;
 			}
-			else if(null_index < 0) null_index = i;
+			else if (null_index < 0) null_index = i;
 		}
 		if (module_index >= 0 && ( bucket_index >= 0 || pipe_index >= 0 || (null_index >= 0 && multybucket_index >= 0)) ) {
 			if (pump_type == PumpType.REGULAR)
@@ -323,7 +203,7 @@ public class DropActions implements Listener
 			block_to_pump = findBlockToPump_regular(block);
 		if (block_to_pump != null)
 		{
-			pumping_blocks.add(block_to_pump);
+			pumpingBlocks.add(block_to_pump);
 			Material pumped = pump(block_to_pump);
 			if (bucket_index < 9) {
 				if (bucket_index < 0) {
@@ -417,7 +297,7 @@ public class DropActions implements Listener
 
 		if (block_to_pump != null)
 		{
-			pumping_blocks.add(block_to_pump);
+			pumpingBlocks.add(block_to_pump);
 			Material pumped = pump(block_to_pump);
 			if (pumped == null)
 				return;
@@ -442,7 +322,7 @@ public class DropActions implements Listener
 		{
 			int top_layer_dy = 0;
 			List<LayerSet> layers = new ArrayList<>();
-			LayerSet top_layer = new LayerSet(max_dxz);
+			LayerSet top_layer = new LayerSet(maxDxz);
 			layers.add(top_layer);
 			
 			int dist = 0;
@@ -461,7 +341,7 @@ public class DropActions implements Listener
 					
 					if (dy >= layers.size())
 					{
-						top_layer = new LayerSet(max_dxz);
+						top_layer = new LayerSet(maxDxz);
 						layers.add(top_layer);
 						top_layer_dy++;
 					}
@@ -481,7 +361,7 @@ public class DropActions implements Listener
 					cur_layer.setDistance(dx, dz, dist);
 					
 					Block rel;
-					if (dy < max_dy) {
+					if (dy < maxDy) {
 						rel = b.getRelative(0, 1, 0);
 						if (continuePump(rel))
 							if (dy >= top_layer_dy)
@@ -491,7 +371,7 @@ public class DropActions implements Listener
 								layers.get(dy + 1).setNext(dx, dz);
 							}
 					}
-					if (dx < max_dxz) {
+					if (dx < maxDxz) {
 						rel = b.getRelative(1, 0, 0);
 						if (continuePump(rel))
 							if (cur_layer.isUnchecked(dx + 1, dz)) {
@@ -499,7 +379,7 @@ public class DropActions implements Listener
 								cur_layer.setNext(dx + 1, dz);
 							}
 					}
-					if (min_dxz < dx) {
+					if (minDxz < dx) {
 						rel = b.getRelative(-1, 0, 0);
 						if (continuePump(rel))
 							if (cur_layer.isUnchecked(dx - 1, dz)) {
@@ -507,7 +387,7 @@ public class DropActions implements Listener
 								cur_layer.setNext(dx - 1, dz);
 							}
 					}
-					if (dz < max_dxz) {
+					if (dz < maxDxz) {
 						rel = b.getRelative(0, 0, 1);
 						if (continuePump(rel))
 							if (cur_layer.isUnchecked(dx, dz + 1)) {
@@ -515,7 +395,7 @@ public class DropActions implements Listener
 								cur_layer.setNext(dx, dz + 1);
 							}
 					}
-					if (min_dxz < dz) {
+					if (minDxz < dz) {
 						rel = b.getRelative(0, 0, -1);
 						if (continuePump(rel))
 							if (cur_layer.isUnchecked(dx, dz - 1)) {
@@ -621,7 +501,7 @@ public class DropActions implements Listener
 	
 	boolean canPump(Block b)
 	{
-		if (pumping_blocks.contains(b))
+		if (pumpingBlocks.contains(b))
 			return false;
 		return isPumpable(b);
 	}
