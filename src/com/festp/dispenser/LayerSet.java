@@ -67,7 +67,7 @@ public class LayerSet {
 		}
 	}
 	
-	public void print_scale(int y) {
+	public void printScale(int y) {
 		System.out.println("LAYER Y="+y+":");
 		print_scale();
 	}

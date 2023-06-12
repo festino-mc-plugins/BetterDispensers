@@ -4,12 +4,26 @@ import java.text.DecimalFormat;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
+import org.bukkit.block.Dispenser;
 import org.bukkit.block.data.BlockData;
+import org.bukkit.block.data.Directional;
 import org.bukkit.block.data.Levelled;
 import org.bukkit.util.Vector;
 
 public class Utils
 {
+	public static Block getActionBlock(Dispenser dispenser)
+	{
+		Directional directonal = (Directional)dispenser.getBlockData();
+		BlockFace face = directonal.getFacing();
+		int dx = (face == BlockFace.WEST ? -1 : (face == BlockFace.EAST ? 1 : 0));
+		int dy = (face == BlockFace.DOWN ? -1 : (face == BlockFace.UP ? 1 : 0));
+		int dz = (face == BlockFace.NORTH ? -1 : (face == BlockFace.SOUTH ? 1 : 0));
+		int x = dispenser.getX(), y = dispenser.getY(), z = dispenser.getZ();
+		return dispenser.getWorld().getBlockAt(x + dx, y + dy, z + dz);
+	}
+	
 	/** @return 3 if full, 0 if empty or invalid bd*/
 	public static double getCauldronLevel(BlockData bd) {
 		if (bd == null || bd.getMaterial() != Material.WATER_CAULDRON) {

@@ -1,19 +1,26 @@
 package com.festp.dispenser;
 
-import org.bukkit.block.data.type.Dispenser;
+import org.bukkit.block.Block;
 
 public abstract class DispenserPump {
-	Dispenser disp;
+	DispenserPumpData data;
+	DropActions pumpedInfo;
 	
-	public DispenserPump(Dispenser disp) {
-		this.disp = disp;
+	public DispenserPump(DispenserPumpData disp) {
+		this.data = disp;
+		
 	}
 	
-	public Dispenser getDispenser() {
-		return disp;
+	public void setPumpedInfo(DropActions pumpedInfo) {
+		this.pumpedInfo = pumpedInfo;
 	}
 	
-	public abstract boolean canPump();
+	public abstract Block pump(Block start);
 	
-	public abstract boolean pump();
+	protected boolean canPump(Block b) {
+		return pumpedInfo.canPump(b);
+	}
+	protected boolean continuePump(Block b) {
+		return DropActions.continuePump(b);
+	}
 }
