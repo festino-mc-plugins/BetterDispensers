@@ -73,7 +73,7 @@ public class PumpManager {
 			return false;
 		}
 		String lore = is.getItemMeta().getLore().get(0).toLowerCase(Locale.ENGLISH);
-		return lore.contains("reqular") || lore.contains("обычн");
+		return lore.contains("regular") || lore.contains("обычн");
 	}
 	public static boolean isStrongPump(ItemStack is) {
 		if (is == null || is.getType() != PUMP_MATERIAL || !is.hasItemMeta() || !is.getItemMeta().hasLore()) {
