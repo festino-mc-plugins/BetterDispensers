@@ -16,6 +16,7 @@ import org.bukkit.event.inventory.PrepareItemCraftEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.inventory.CraftingInventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.RecipeChoice.ExactChoice;
 import org.bukkit.inventory.ShapedRecipe;
 import org.bukkit.inventory.meta.ItemMeta;
 
@@ -64,6 +65,10 @@ public class CraftManager implements Listener {
 	}
 	
 	private void addSomeCrafts() {
+    	/*String RUS_reg_pump_name = "Обычная помпа";
+    	String RUS_reg_pump_lore = "Обычный модуль помпы для раздатчика";
+    	String RUS_top_pump_name = "Продвинутая помпа";
+    	String RUS_top_pump_lore = "Продвинутый модуль помпы для раздатчика";*/
 		String name___pump_regular = "regular_pump";
 		String name___pump_advanced = "advanced_pump";
     	NamespacedKey key___pump_regular = new NamespacedKey(plugin, name___pump_regular);
@@ -74,8 +79,6 @@ public class CraftManager implements Listener {
     	// pumps
     	ItemStack reg_pump = new ItemStack(Material.BLAZE_ROD, 1);
     	ItemMeta reg_pump_meta = reg_pump.getItemMeta();
-    	String RUS_reg_pump_name = "Обычная помпа";
-    	String RUS_reg_pump_lore = "Обычный модуль помпы для раздатчика";
     	String ENG_reg_pump_name = "Regular Pump";
     	String ENG_reg_pump_lore = "Regular pump module for dispenser (pumps water and lava)";
     	reg_pump_meta.setDisplayName(ENG_reg_pump_name);
@@ -90,8 +93,6 @@ public class CraftManager implements Listener {
 
     	ItemStack top_pump = new ItemStack(Material.BLAZE_ROD, 1);
     	ItemMeta top_pump_meta = top_pump.getItemMeta();
-    	String RUS_top_pump_name = "Продвинутая помпа";
-    	String RUS_top_pump_lore = "Продвинутый модуль помпы для раздатчика";
     	String ENG_top_pump_name = "Advanced Pump";
     	String ENG_top_pump_lore = "Advanced pump module for dispenser (pumps water and lava)";
     	top_pump_meta.setDisplayName(ENG_top_pump_name);
@@ -100,7 +101,7 @@ public class CraftManager implements Listener {
     	ShapedRecipe advanced_pump = new ShapedRecipe(key___pump_advanced, top_pump);
     	advanced_pump.shape(new String[]{"RMR", "MSM", "RMR"});
     	advanced_pump.setIngredient('R', Material.REDSTONE_BLOCK);
-    	advanced_pump.setIngredient('M', Material.BLAZE_ROD);
+    	advanced_pump.setIngredient('M', new ExactChoice(reg_pump));
     	advanced_pump.setIngredient('S', Material.NETHER_STAR);
     	server.addRecipe(advanced_pump);
 	}
